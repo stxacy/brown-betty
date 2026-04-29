@@ -1,22 +1,57 @@
-// --- Nav: transparent → scrolled on scroll ---
+// Nav: transparent → scrolled, hide on scroll down, reveal on scroll up
 const nav = document.getElementById('main-nav');
 if (nav) {
-  const checkScroll = () => nav.classList.toggle('scrolled', window.scrollY > 60);
-  window.addEventListener('scroll', checkScroll, { passive: true });
-  checkScroll();
+  let lastScrollY = window.scrollY;
+  let ticking = false;
+
+  const updateNav = () => {
+    const currentY = window.scrollY;
+
+    nav.classList.toggle('scrolled', currentY > 60);
+
+    if (currentY > 120) {
+      const goingDown = currentY > lastScrollY;
+      nav.classList.toggle('nav-hidden', goingDown);
+      if (goingDown && nav.classList.contains('nav-open')) {
+        nav.classList.remove('nav-open');
+      }
+    } else {
+      nav.classList.remove('nav-hidden');
+    }
+
+    lastScrollY = currentY;
+    ticking = false;
+  };
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(updateNav);
+      ticking = true;
+    }
+  }, { passive: true });
+
+  updateNav();
 }
 
-// --- Hamburger toggle ---
+// Hamburger toggle
 document.querySelector('.nav-hamburger')?.addEventListener('click', () => {
+  nav?.classList.remove('nav-hidden');
   nav?.classList.toggle('nav-open');
 });
 
-// --- Close mobile nav when a link is clicked ---
+// Close mobile nav when a link is clicked
 document.querySelectorAll('.nav-links a').forEach(link => {
   link.addEventListener('click', () => nav?.classList.remove('nav-open'));
 });
 
-// --- Smooth scroll for in-page anchors ---
+// Close mobile nav on outside click
+document.addEventListener('click', e => {
+  if (nav?.classList.contains('nav-open') && !nav.contains(e.target)) {
+    nav.classList.remove('nav-open');
+  }
+});
+
+// Smooth scroll for in-page anchors
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', e => {
     const target = document.querySelector(anchor.getAttribute('href'));
@@ -26,7 +61,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
-// --- Scroll reveal ---
+// Scroll reveal
 const revealObserver = new IntersectionObserver(entries => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
